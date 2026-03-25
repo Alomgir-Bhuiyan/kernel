@@ -1,12 +1,129 @@
-The first day in my way of writing a kernel from scretch.
-Because I thought, It will be fun and most importantly, why not ?
+# Day 1: Beginning My Journey to Write a Kernel from Scratch
 
-My initial skills
-	- C ( Intermidiate )
-	- Assembly ( armf, 16bit )
-	- Make
-	- Compiler
-	- Linux
-And I know basics of how computure motherboard's component like CPU, GPU, SRAM, NVRAM, DRAM, BIOS, BOOTLOADER, KERNEL, NETWORKING and FILESYSTEM. 
+I started learning how to write a kernel from scratch today. I thought it would be fun—and most importantly, why not?
 
-*** I sucks at communiation, I'm not quite good at English !
+## Concepts
+
+- **BIOS (Basic Input/Output System)**  
+  During power-on, the BIOS is loaded from firmware (stored in ROM/flash) into memory and begins execution automatically.
+
+- The BIOS loads the first sector (boot sector) from a bootable disk into memory at address **0x7C00**. Execution then starts from this address.  
+  *(Note: This address is where the bootloader is loaded—not the BIOS itself.)*
+
+- The boot sector must end with the signature **0x55AA**, which indicates that it is bootable code.
+
+- BIOS operates in **16-bit real mode**, so bootloaders are typically written in 16-bit assembly. Later stages (like the kernel) can switch to 32-bit or 64-bit modes.
+
+- The BIOS performs a **POST (Power-On Self-Test)** to check whether hardware components are functioning correctly.
+
+- After POST, the BIOS loads the **bootloader**, which is responsible for loading the **kernel**, and the process continues from there.
+
+*****************************************************
+Assembly Explanation: BIOS Interrupt 0x10 (Video Services)
+
+The "int" instruction is used to trigger a software interrupt. In real mode, BIOS interrupts provide low-level access to hardware. One of the most commonly used interrupts for output is "int 0x10", which provides video-related services.
+
+"int 0x10" is not a standard output (stdout) interface. Instead, it is a BIOS video service interrupt that allows programs to interact directly with display hardware.
+
+To use "int 0x10", specific registers must be set before invoking the interrupt. The primary register used to select the function is "AH".
+
+General Register Usage
+
+- "AH" (Function Number)
+  Specifies which video service to execute. Each value corresponds to a different function.
+
+- "AL"
+  Often used to pass data to the function (for example, the character to display).
+
+- "BH" (Page Number)
+  Selects the display page. Typically set to 0.
+
+- "BL" (Attribute)
+  Used in text mode to define text color and background.
+
+- "CX"
+  Used as a counter or to specify how many times an operation should be repeated.
+
+- "DH" (Row)
+  Specifies the row position of the cursor.
+
+- "DL" (Column)
+  Specifies the column position of the cursor.
+
+- "ES:BP"
+  Used as a pointer to data in memory for some functions (such as writing strings).
+
+Common Functions of int 0x10
+
+1. Teletype Output (Display Character)
+
+- Function: AH = 0x0E
+- Purpose: Prints a character to the screen and advances the cursor.
+
+Required Registers:
+
+- "AH = 0x0E" (function number)
+- "AL = character" (ASCII character to print)
+- "BH = page number" (usually 0)
+- "BL = text attribute" (used in graphics modes, optional in text mode)
+
+Behavior:
+
+- Prints the character in "AL"
+- Automatically moves the cursor forward
+- Handles special characters like newline and carriage return
+
+2. Set Cursor Position
+
+- Function: AH = 0x02
+
+Required Registers:
+
+- "AH = 0x02"
+- "BH = page number"
+- "DH = row"
+- "DL = column"
+
+3. Get Cursor Position
+
+- Function: AH = 0x03
+
+Returns:
+
+- "DH = row"
+- "DL = column"
+
+4. Write Character and Attribute
+
+- Function: AH = 0x09
+
+Required Registers:
+
+- "AH = 0x09"
+- "AL = character"
+- "BH = page"
+- "BL = attribute"
+- "CX = repeat count"
+
+5. Write String
+
+- Function: AH = 0x13
+
+Required Registers:
+
+- "AH = 0x13"
+- "AL = write mode"
+- "BH = page"
+- "BL = attribute"
+- "CX = length of string"
+- "DH = row"
+- "DL = column"
+- "ES:BP = pointer to string"
+
+Notes
+
+- All these services work in 16-bit real mode.
+- These interrupts are provided by the BIOS, so they are only available before switching to protected mode or long mode.
+- After switching to protected mode, you must implement your own drivers for output.
+
+This interrupt is essential for early bootloader development, especially for debugging and simple text output before a full kernel environment is available.
