@@ -1,18 +1,22 @@
 AC=nasm
 QEMU=qemu-system-x86_64
-EXATTR=-nographic
-MAIN=boot.asm
-BIN=$(patsubst %.asm, %.bin, $(MAIN))
+EXATTR=-nographic 
+PROJDIR=src
+BUILDDIR=build
+PROJCODE=$(foreach asm, $(PROJDIR), $(wildcard $(asm)/*.asm))
+BIN=$(patsubst $(PROJDIR)/%.asm,%.bin, $(PROJCODE))
+HDA=$(BUILDDIR)/$(BIN)
 
 .PHONY: all emulate
 
 all: build
 
-build: $(MAIN)
-	$(AC) -f bin $< -o $(BIN)
+build: $(PROJCODE)
+	@mkdir -p $(BUILDDIR)
+	$(AC) -f bin $< -o $(HDA)
 
 clean:
-	rm -f $(BIN)
+	rm -rf $(BUILDDIR)
 
 emulate: build
-	$(QEMU) -hda $(BIN) $(EXATTR)
+	$(QEMU) -hda $(HDA) $(EXATTR)
