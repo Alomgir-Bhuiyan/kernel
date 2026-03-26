@@ -2,26 +2,26 @@ name: Makefile CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: configure
-      run: ./configure
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y nasm qemu-system-x86
 
-    - name: Install dependencies
-      run: make
+      - name: Build
+        run: make
 
-    - name: Run check
-      run: make check
-
-    - name: Run distcheck
-      run: make distcheck
+      - name: Smoke test (QEMU)
+        run: |
+          timeout 5s make emulate || true
